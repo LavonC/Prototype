@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  coordinator:
+    build:
+      context: ..
+      dockerfile: deploy/coordinator.Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - UC_MODE=coordinator
+      - UC_COORDINATOR_PORT=8080
+      - UC_STORAGE_DRIVER=postgres
+      - UC_STORAGE_DSN=postgres://unicompute:secret@db:5432/unicompute?sslmode=disable
+      - UC_STORAGE_MIGRATIONS_DIR=/app/migrations
+      - UC_SECURITY_JWT_SECRET=super-secret-key-change-me
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - unicompute-net
+
+  db:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=unicompute
+      - POSTGRES_PASSWORD=secret
+      - POSTGRES_DB=unicompute
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U unicompute"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - unicompute-net
+
+  # Optional TURN server for WebRTC relay fallback
+  coturn:
+    image: coturn/coturn:4.6.2
+    command: >
+      -n --log-file=stdout 
+      --min-port=49152 --max-port=65535 
+      --realm=unicompute.local
+      --user=unicompute:secret-turn-key
+    ports:
+      - "3478:3478"
+      - "3478:3478/udp"
+    networks:
+      - unicompute-net
+
+volumes:
+  pgdata:
+
+networks:
+  unicompute-net:
+    driver: bridge

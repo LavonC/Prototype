@@ -1,0 +1,16 @@
+{
+  "name": "unicompute-desktop",
+  "version": "1.0.0",
+  "description": "UniCompute Desktop Application",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "electron": "^29.1.0",
+    "electron-builder": "^24.13.3"
+  }
+}
